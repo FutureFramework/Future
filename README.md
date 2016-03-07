@@ -1,2 +1,2 @@
-# future
-IoT framework for Qt
+# Future - IoT framework for Qt
+CoAP and LWM2M realisation

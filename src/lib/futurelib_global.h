@@ -1,0 +1,12 @@
+#ifndef FUTURELIB_GLOBAL_H
+#define FUTURELIB_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(MAKE_FUTURELIB)
+#  define FUTURELIB_SHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define FUTURELIB_SHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // FUTURELIB_GLOBAL_H
