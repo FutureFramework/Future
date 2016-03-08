@@ -1,12 +1,12 @@
 #ifndef COAP_H
 #define COAP_H
 
-#include "../futurelib_global.h"
+#include "../iotlib_global.h"
 
-#include <QString>
+#include <QList>
 
 class CoapEndpoint;
-class FUTURELIB_SHARED_EXPORT Coap
+class IOTLIB_SHARED_EXPORT Coap
 {
 public:
     static CoapEndpoint *defaultEndpoint();
