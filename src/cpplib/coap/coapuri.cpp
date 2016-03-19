@@ -19,7 +19,8 @@ public:
     {
     }
 
-    QString host;
+    QHostAddress hostAddress;
+    QString hostName;
     quint16 port;
     QString path;
 };
@@ -35,15 +36,15 @@ CoapUri::CoapUri(const QString &fromString) :
     QRegularExpression re(R"(^(coaps?:\/\/)?([^\/\s]+)(\/.*)?$)");
     QRegularExpressionMatch match = re.match(fromString);
     if (match.hasMatch()) {
-        d->host = match.captured(2);
+        d->hostName = match.captured(2);
+        d->hostAddress = QHostAddress(d->hostName);
         d->path = match.captured(3);
     }
 }
 
 CoapUri::CoapUri(const CoapUri &other) :
     d(other.d)
-{
-}
+{ }
 
 CoapUri &CoapUri::operator =(const CoapUri &other)
 {
@@ -52,17 +53,27 @@ CoapUri &CoapUri::operator =(const CoapUri &other)
 }
 
 CoapUri::~CoapUri()
+{ }
+
+void CoapUri::setHostName(const QString &hostName)
 {
+    d->hostName = hostName;
+    d->hostAddress = QHostAddress(hostName);
 }
 
-void CoapUri::setHost(const QString &host)
+QString CoapUri::hostName() const
 {
-    d->host = host;
+    return d->hostName;
 }
 
-QString CoapUri::host() const
+void CoapUri::setHost(const QHostAddress &host)
 {
-    return d->host;
+    d->hostAddress = host;
+}
+
+QHostAddress CoapUri::host() const
+{
+    return d->hostAddress;
 }
 
 void CoapUri::setPort(quint16 port)

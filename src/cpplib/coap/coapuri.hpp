@@ -23,8 +23,8 @@ public:
     CoapUri &operator =(const CoapUri &other);
     ~CoapUri();
 
-    void setHostString(const QString &host); // ip or name
-    QString hostString() const; // host name even if it is resolved already
+    void setHostName(const QString &hostName); // ip or name
+    QString hostName() const; // host name even if it is resolved already
     void setHost(const QHostAddress &address); // only ip
     QHostAddress host() const;
     void setPort(quint16 port);

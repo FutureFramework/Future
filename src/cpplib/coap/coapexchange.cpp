@@ -32,8 +32,8 @@ void CoapExchangePrivate::_q_looked_up(const QHostInfo &info)
     if (info.error() == QHostInfo::NoError) {
         if (sendAfterLookup) {
             lastRequest.setAddress(info.addresses()[0]);
-            q->send(lastRequest);
             setStatus(CoapExchange::InProgress);
+            q->send(lastRequest);
         } else {
             uri.setHost(info.addresses()[0]);
             setStatus(CoapExchange::Ready);
@@ -90,9 +90,9 @@ void CoapExchange::setUri(const CoapUri &uri)
         qWarning() << "Exchange is InProgress, can't change uri";
         return;
     }
-    if (QHostAddress(uri.host()).isNull()) {
+    if (uri.host().isNull() && QHostAddress(uri.hostName()).isNull()) {
         d->setStatus(Lookup);
-        QHostInfo::lookupHost(uri.host(), this, SLOT(_q_looked_up(QHostInfo)));
+        QHostInfo::lookupHost(uri.hostName(), this, SLOT(_q_looked_up(QHostInfo)));
     }
     d->uri = uri;
     emit uriChanged();

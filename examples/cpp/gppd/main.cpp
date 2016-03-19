@@ -6,16 +6,28 @@
 int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
-    CoapEndpoint endpoint;
-    endpoint.bind(QHostAddress::Any, 5686);
 
-    CoapExchange *e = new CoapExchange;
-    qDebug() << e->status();
+    QUrl url("coap://{some}/av");
+    qDebug() << url;
+    qDebug() << url.scheme();
+    qDebug() << url.host();
+    qDebug() << url.path();
+    qDebug() << url.port();
+    qDebug() << url.query();
+    qDebug() << QUrl::idnWhitelist();
 
-    e->setUri(CoapUri("coap://coap.me"));
-    e->get();
+    return 0;
 
-    QObject::connect(e, &CoapExchange::statusChanged, [=](){ qDebug() << e->status(); });
+//    CoapEndpoint endpoint;
+//    endpoint.bind(QHostAddress::Any, 5686);
+
+//    CoapExchange *e = new CoapExchange;
+//    qDebug() << e->status();
+
+//    e->setUri(CoapUri("coap://coap.me"));
+//    e->get();
+
+//    QObject::connect(e, &CoapExchange::statusChanged, [=](){ qDebug() << e->status(); });
 
 
     return app.exec();
