@@ -2,11 +2,11 @@
 #define COAP_EXCHANGE_P_H
 
 #include "coapexchange.hpp"
-#include "coapuri.hpp"
 
 #include <functional>
 #include <QJSValue>
 #include <QHostInfo>
+#include <QUrl>
 
 class CoapEndpoint;
 class CoapExchangePrivate
@@ -17,7 +17,6 @@ public:
     virtual ~CoapExchangePrivate();
 
     CoapEndpoint *endpoint;
-    CoapUri uri;
     CoapExchange *q_ptr;
 
     CoapExchange::Status status;
@@ -30,6 +29,7 @@ public:
 
     quint8 retransmissionCount;
     CoapMessage lastRequest;
+    QUrl url;
 
     bool sendAfterLookup;
     bool deleteAfterComplete;

@@ -30,19 +30,17 @@ void CoapExchangePrivate::_q_looked_up(const QHostInfo &info)
     qDebug() << "lookup complete" << info.addresses();
     Q_Q(CoapExchange);
     if (info.error() == QHostInfo::NoError) {
+        QHostAddress address = info.addresses()[0];
+        lastRequest.setAddress(address);
         if (sendAfterLookup) {
-            lastRequest.setAddress(info.addresses()[0]);
             setStatus(CoapExchange::InProgress);
             q->send(lastRequest);
         } else {
-            uri.setHost(info.addresses()[0]);
             setStatus(CoapExchange::Ready);
         }
     } else {
         setStatus(CoapExchange::LookupFailed);
     }
-
-
 }
 
 bool CoapExchangePrivate::isReady()
@@ -76,44 +74,50 @@ CoapExchange::CoapExchange(CoapExchangePrivate &dd, QObject *parent) :
 
 CoapExchange::~CoapExchange()
 {
-    qDebug() << "Exchange to" << uriString() << "is destroyed";
+    qDebug() << "Exchange to" << urlString() << "is destroyed";
     if (d_ptr)
         delete d_ptr;
     //Q_D(CoapExchange);
 //    d->endpoint->d_ptr->remove_exchange(this);
 }
 
-void CoapExchange::setUri(const CoapUri &uri)
+void CoapExchange::setUrl(const QUrl &url)
 {
     Q_D(CoapExchange);
     if (status() == InProgress) {
         qWarning() << "Exchange is InProgress, can't change uri";
         return;
     }
-    if (uri.host().isNull() && QHostAddress(uri.hostName()).isNull()) {
-        d->setStatus(Lookup);
-        QHostInfo::lookupHost(uri.hostName(), this, SLOT(_q_looked_up(QHostInfo)));
+    if (d->lastRequest.address().isNull()) {
+        QHostAddress hostAddress = QHostAddress(url.host());
+        if (hostAddress.isNull()) {
+            d->setStatus(Lookup);
+            QHostInfo::lookupHost(url.host(), this, SLOT(_q_looked_up(QHostInfo)));
+        } else {
+            d->lastRequest.setAddress(hostAddress);
+        }
     }
-    d->uri = uri;
-    emit uriChanged();
+    d->lastRequest.setUrl(url);
+    d->lastRequest.setPort(url.port(5683));
+    d->url = url;
+    emit urlChanged();
 }
 
-CoapUri CoapExchange::uri() const
+QUrl CoapExchange::url() const
 {
     Q_D(const CoapExchange);
-    return d->uri;
+    return d->url;
 }
 
-void CoapExchange::setUriString(const QString &uriString)
+void CoapExchange::setUrlString(const QString &urlString)
 {
-    Q_D(CoapExchange);
-    d->uri = CoapUri(uriString);
+    setUrl(QUrl(urlString));
 }
 
-QString CoapExchange::uriString() const
+QString CoapExchange::urlString() const
 {
-    //Q_D(const CoapExchange);
-    return "CoapUri(TODO make normal output)"; /// TODO make normal output
+    Q_D(const CoapExchange);
+    return d->url.toString();
 }
 
 CoapExchange::Status CoapExchange::status() const
@@ -130,16 +134,12 @@ void CoapExchange::get()
         return;
     }
 
-
-    CoapMessage get;
-    get.setCode(CoapMessage::Code::Get);
-    get.setType(CoapMessage::Type::Confirmable);
-    get.setUri(d->uri);
-    d->lastRequest = get;
+    d->lastRequest.setCode(CoapMessage::Code::Get);
+    d->lastRequest.setType(CoapMessage::Type::Confirmable);
     if (status() == Lookup)
         d->sendAfterLookup = true;
     else
-        send(get);
+        send(d->lastRequest);
 }
 
 void CoapExchange::observe()
@@ -154,7 +154,7 @@ void CoapExchange::observe()
     get.setCode(CoapMessage::Code::Get);
     get.setType(CoapMessage::Type::Confirmable);
     get.addOption(CoapMessage::OptionType::Observe);
-    get.setUri(d->uri);
+    get.setUrl(d->url);
     send(get);
 }
 
@@ -224,8 +224,6 @@ void CoapExchange::send(CoapMessage &message)
         qWarning() << "Can't send a message without CoapEndpoint, create it first";
         return;
     }
-    if (message.isRequest())
-        d->lastRequest = message;
     d->endpoint->d_ptr->tx(this, message);
 }
 

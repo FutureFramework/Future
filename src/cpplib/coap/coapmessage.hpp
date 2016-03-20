@@ -2,13 +2,13 @@
 #define COAP_PDU_H
 
 #include "../iotlib_global.h"
-#include "coapuri.hpp"
 #include "coap.hpp"
 
 #include <QObject>
 #include <QByteArray>
 #include <QSharedDataPointer>
 #include <QHostAddress>
+#include <QUrl>
 
 class CoapMessagePrivate;
 class CoapOption;
@@ -118,8 +118,8 @@ public:
     int optionsCount() const;
     CoapOption option(int idx) const;
 
-    void setUri(const QString &uri);
-    QString uri() const;
+    void setUrl(const QUrl &url);
+    QUrl url() const;
 
     void setContentFormat(ContentFormat format);
     ContentFormat contentFormat() const;
@@ -135,8 +135,6 @@ public:
 
     quint16 port() const;
     void setPort(quint16 port);
-
-    void setUri(const CoapUri &uri);
 
     enum class Error {
         FORMAT_ERROR           = 1,

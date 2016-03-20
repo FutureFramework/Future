@@ -213,6 +213,12 @@ CoapOption CoapMessage::option(int idx) const
     return d->options[idx];
 }
 
+void CoapMessage::setUrl(const QUrl &url)
+{
+    foreach (const QString &path, url.path().split("/", QString::SkipEmptyParts))
+        addOption(OptionType::UriPath, path.toUtf8());
+}
+
 void CoapMessage::setContentFormat(CoapMessage::ContentFormat format)
 {
     CoapMessage::OptionType optionContentFormat = OptionType::ContentFormat;
@@ -418,14 +424,6 @@ quint16 CoapMessage::port() const
 void CoapMessage::setPort(quint16 port)
 {
     d->port = port;
-}
-
-void CoapMessage::setUri(const CoapUri &uri)
-{
-    d->address = uri.host();
-    d->port = uri.port();
-    foreach (const QString &path, uri.path().split("/", QString::SkipEmptyParts))
-        addOption(OptionType::UriPath, path.toUtf8());
 }
 
 CoapMessage::Errors CoapMessage::errors() const

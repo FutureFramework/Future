@@ -3,7 +3,6 @@
 
 #include "../iotlib_global.h"
 #include "coapmessage.hpp"
-#include "coapuri.hpp"
 
 class CoapEndpoint;
 class CoapEndpointPrivate;
@@ -17,7 +16,7 @@ class IOTLIB_SHARED_EXPORT CoapExchange : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
-    Q_PROPERTY(QString uri READ uriString WRITE setUriString NOTIFY uriChanged)
+    Q_PROPERTY(QString uri READ urlString WRITE setUrlString NOTIFY urlChanged)
 public:
     /**
      * @brief CoapExchange through default endpoint
@@ -29,14 +28,14 @@ public:
      * @param uri contains host address, port, path and other data
      * @see CoapUri
      */
-    void setUri(const CoapUri &uri);
+    void setUrl(const QUrl &url);
     /**
      * @brief uri returns uri of a resource we are talking with.
      * @return
      */
-    CoapUri uri() const;
-    void setUriString(const QString &uriString);
-    QString uriString() const;
+    QUrl url() const;
+    void setUrlString(const QString &urlString);
+    QString urlString() const;
 
     /**
      * @brief The Status enum
@@ -74,7 +73,7 @@ public:
 
 signals:
     void statusChanged();
-    void uriChanged();
+    void urlChanged();
     void completed();
     void timeout();
 protected:
