@@ -3,6 +3,7 @@
 #include "coapexchange_p.hpp"
 #include "coapmessage.hpp"
 #include "timerqueue.hpp"
+#include "coapcontenthandlers.h"
 
 #include <QUdpSocket>
 #include <QTimer>
@@ -28,6 +29,10 @@ void CoapEndpointPrivate::setup()
     timerQueue = new TimerQueue(q);
     QObject::connect(timerQueue, SIGNAL(timeout(QByteArray)),
                      q,          SLOT(_q_on_timeout(QByteArray)));
+
+    // register built in content handlers
+    Coap::addUnpacker((quint16)CoapMessage::ContentFormat::AppJson,
+                      &CoapContentHandlers::unpackJSONContent);
 }
 
 void CoapEndpointPrivate::tx(CoapExchange *fromExchange, CoapMessage &message)
@@ -89,7 +94,7 @@ void CoapEndpointPrivate::_q_on_timeout(const QByteArray &key)
     if (++exchange->d_ptr->retransmissionCount == 4) { // give up
         exchange->handleError();
     } else {
-        sendMessage(exchange->d_ptr->lastRequest);
+        sendMessage(exchange->d_ptr->message);
         timerQueue->addTimer(2000, key);
     }
 }

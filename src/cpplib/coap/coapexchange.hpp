@@ -60,9 +60,8 @@ public:
     Q_INVOKABLE void observe();
     Q_INVOKABLE void cancel();
 
-
-    Q_INVOKABLE void onCompleted(const QVariant &jsFunction);
-    Q_INVOKABLE void onTimeout(const QVariant &jsFunction);
+    QByteArray contentRaw() const;
+    QVariant content() const;
 
     /**
      * @brief deleteAfterComplete controls lifetime of CoapExchange object.

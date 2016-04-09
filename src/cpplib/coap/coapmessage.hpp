@@ -124,8 +124,8 @@ public:
     void setContentFormat(ContentFormat format);
     ContentFormat contentFormat() const;
 
-    void setPayload(const QByteArray &payload);
-    QByteArray payload() const;
+    void setContent(const QByteArray &content);
+    QByteArray content() const;
 
     QByteArray pack() const;
     void unpack(const QByteArray &packed);

@@ -10,13 +10,20 @@ int main(int argc, char **argv)
     CoapEndpoint endpoint;
     endpoint.bind(QHostAddress::Any, 5686);
 
+
+
     CoapExchange *e = new CoapExchange;
     qDebug() << e->status();
 
-    e->setUrl(QUrl("coap://coap.me2/hello"));
+    QObject::connect(e, &CoapExchange::statusChanged, [=](){ qDebug() << e->status(); });
+    QObject::connect(e, &CoapExchange::completed, [=](){
+       qDebug() << "Unpacked payload:" << e->content();
+    });
+
+
+    e->setUrl(QUrl("coap://127.0.0.1/hello"));
     e->get();
 
-    QObject::connect(e, &CoapExchange::statusChanged, [=](){ qDebug() << e->status(); });
 
 
     return app.exec();

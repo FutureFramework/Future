@@ -236,14 +236,20 @@ void CoapMessage::setContentFormat(CoapMessage::ContentFormat format)
     }
 }
 
-void CoapMessage::setPayload(const QByteArray &payload)
+CoapMessage::ContentFormat CoapMessage::contentFormat() const
 {
-    if (d->payload == payload)
-        return;
-    d->payload = payload;
+    foreach (const CoapOption &option, d->options)
+        if (option.type() == OptionType::ContentFormat)
+            return (ContentFormat)option.data().data()[0];
+    return ContentFormat::TextPlain;
 }
 
-QByteArray CoapMessage::payload() const
+void CoapMessage::setContent(const QByteArray &content)
+{
+    d->payload = content;
+}
+
+QByteArray CoapMessage::content() const
 {
     return d->payload;
 }
@@ -467,10 +473,10 @@ QDebug operator<<(QDebug debug, const CoapMessage &pdu)
 //        //        if (option.type() == Coap::OptionType:: || option.type() == 3)
 //        dbg << " asString: " << option.data();
 //    }
-    if (pdu.payload().isEmpty())
+    if (pdu.content().isEmpty())
         debug << "No payload ";
     else
-        debug << "Payload:" << pdu.payload().toHex() << " asString:" << pdu.payload();
+        debug << "Payload:" << pdu.content().toHex() << " asString:" << pdu.content();
 
     debug << ")";
     return debug;

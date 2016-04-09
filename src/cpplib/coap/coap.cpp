@@ -1,4 +1,6 @@
 #include "coap.hpp"
+#include "coapcontenthandlers.h"
+#include "coapmessage.hpp"
 
 #include <QList>
 #include <QDebug>
@@ -7,13 +9,13 @@ struct CoapPrivate {
     CoapPrivate() {}
     ~CoapPrivate() {}
     QList<CoapEndpoint *> endpoints;
+    QHash<quint16, payload_unpacker_f> unpackers;
 };
 
 Q_GLOBAL_STATIC(CoapPrivate, coap_private)
 
 Coap::Coap()
-{
-}
+{ }
 
 CoapEndpoint *Coap::defaultEndpoint()
 {
@@ -47,4 +49,20 @@ QList<CoapEndpoint *> Coap::endpoints()
     if (!d)
         return QList<CoapEndpoint *>();
     return d->endpoints;
+}
+
+void Coap::addUnpacker(quint16 contentFormat, payload_unpacker_f unpacker)
+{
+    CoapPrivate *d = coap_private;
+    if (!d)
+        return;
+    d->unpackers.insert(contentFormat, unpacker);
+}
+
+payload_unpacker_f Coap::unpacker(quint16 contentFormat)
+{
+    CoapPrivate *d = coap_private;
+    if (!d)
+        return 0;
+    return d->unpackers.value(contentFormat, 0);
 }

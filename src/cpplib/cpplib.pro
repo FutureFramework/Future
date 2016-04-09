@@ -17,11 +17,13 @@ HEADERS += \
     coap/coapexchange_p.hpp \
     coap/coapmessage.hpp \
     coap/timerqueue.hpp \
-    endianhelper.h
+    endianhelper.h \
+    coap/coapcontenthandlers.h
 
 SOURCES += \
     coap/coap.cpp \
     coap/coapendpoint.cpp \
     coap/coapexchange.cpp \
     coap/coapmessage.cpp \
-    coap/timerqueue.cpp
+    coap/timerqueue.cpp \
+    coap/coapcontenthandlers.cpp

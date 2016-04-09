@@ -16,20 +16,19 @@ public:
     CoapExchangePrivate();
     virtual ~CoapExchangePrivate();
 
-    CoapEndpoint *endpoint;
     CoapExchange *q_ptr;
+
+    CoapEndpoint *endpoint;
 
     CoapExchange::Status status;
     void setStatus(CoapExchange::Status status);
 
     void _q_looked_up(const QHostInfo &info);
 
-    QJSValue jsCompleted;
-    QJSValue jsTimeout;
-
     quint8 retransmissionCount;
-    CoapMessage lastRequest;
+    CoapMessage message;
     QUrl url;
+    QByteArray payload;
 
     bool sendAfterLookup;
     bool deleteAfterComplete;

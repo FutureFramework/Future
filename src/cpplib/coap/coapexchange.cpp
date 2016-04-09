@@ -31,10 +31,10 @@ void CoapExchangePrivate::_q_looked_up(const QHostInfo &info)
     Q_Q(CoapExchange);
     if (info.error() == QHostInfo::NoError) {
         QHostAddress address = info.addresses()[0];
-        lastRequest.setAddress(address);
+        message.setAddress(address);
         if (sendAfterLookup) {
             setStatus(CoapExchange::InProgress);
-            q->send(lastRequest);
+            q->send(message);
         } else {
             setStatus(CoapExchange::Ready);
         }
@@ -88,17 +88,17 @@ void CoapExchange::setUrl(const QUrl &url)
         qWarning() << "Exchange is InProgress, can't change uri";
         return;
     }
-    if (d->lastRequest.address().isNull()) {
+    if (d->message.address().isNull()) {
         QHostAddress hostAddress = QHostAddress(url.host());
         if (hostAddress.isNull()) {
             d->setStatus(Lookup);
             QHostInfo::lookupHost(url.host(), this, SLOT(_q_looked_up(QHostInfo)));
         } else {
-            d->lastRequest.setAddress(hostAddress);
+            d->message.setAddress(hostAddress);
         }
     }
-    d->lastRequest.setUrl(url);
-    d->lastRequest.setPort(url.port(5683));
+    d->message.setUrl(url);
+    d->message.setPort(url.port(5683));
     d->url = url;
     emit urlChanged();
 }
@@ -134,12 +134,14 @@ void CoapExchange::get()
         return;
     }
 
-    d->lastRequest.setCode(CoapMessage::Code::Get);
-    d->lastRequest.setType(CoapMessage::Type::Confirmable);
-    if (status() == Lookup)
+    d->message.setCode(CoapMessage::Code::Get);
+    d->message.setType(CoapMessage::Type::Confirmable);
+    if (status() == Lookup) {
         d->sendAfterLookup = true;
-    else
-        send(d->lastRequest);
+    } else {
+        d->setStatus(InProgress);
+        send(d->message);
+    }
 }
 
 void CoapExchange::observe()
@@ -165,16 +167,21 @@ void CoapExchange::cancel()
     d->setStatus(Ready);
 }
 
-void CoapExchange::onCompleted(const QVariant &jsFunction)
+QByteArray CoapExchange::contentRaw() const
 {
-    Q_D(CoapExchange);
-    d->jsCompleted = jsFunction.value<QJSValue>();
+    Q_D(const CoapExchange);
+    return d->message.content();
 }
 
-void CoapExchange::onTimeout(const QVariant &jsFunction)
+QVariant CoapExchange::content() const
 {
-    Q_D(CoapExchange);
-    d->jsTimeout = jsFunction.value<QJSValue>();
+    Q_D(const CoapExchange);
+    payload_unpacker_f unpacker = Coap::unpacker((quint16)d->message.contentFormat());
+    if (!unpacker) {
+        qWarning() << "CoapExchange::payload(): no unpacker for content format" << d->message.contentFormat();
+        return QVariant();
+    }
+    return unpacker(d->message.content());
 }
 
 void CoapExchange::deleteAfterComplete()
@@ -186,9 +193,8 @@ void CoapExchange::deleteAfterComplete()
 void CoapExchange::handle(CoapMessage &message)
 {
     Q_D(CoapExchange);
+    d->message = message;
     if (message.code() == CoapMessage::Code::Content) {
-        if (d->jsCompleted.isCallable())
-            d->jsCompleted.call();
         //d->lambdaCompleted();
         if (!d->observe) {
             emit completed();
@@ -208,8 +214,6 @@ void CoapExchange::handle(CoapMessage &message)
 void CoapExchange::handleError()
 {
     Q_D(CoapExchange);
-    if (d->jsTimeout.isCallable())
-        d->jsTimeout.call();
     emit timeout();
     d->setStatus(TimedOut);
 
