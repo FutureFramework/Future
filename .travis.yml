@@ -11,7 +11,8 @@ addons:
   apt:
     packages:
     - cmake
-    - ppa:beineri/opt-qt551
+    - libqt5core5
+    - libqt5network5
     
 script:
  - mkdir build
