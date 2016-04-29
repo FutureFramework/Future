@@ -1,5 +1,6 @@
 #include "coapcontenthandlers.h"
 #include <QJsonDocument>
+#include "qmsgpack/msgpack.h"
 
 QVariant CoapContentHandlers::unpackJSONContent(const QByteArray &data)
 {
@@ -7,4 +8,9 @@ QVariant CoapContentHandlers::unpackJSONContent(const QByteArray &data)
     if (document.isNull())
         return QVariant();
     return document.toVariant();
+}
+
+QVariant CoapContentHandlers::unpackMsgPackContent(const QByteArray &data)
+{
+    return MsgPack::unpack(data);
 }

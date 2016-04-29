@@ -1,0 +1,3 @@
+[submodule "3rdparty/qmsgpack"]
+	path = 3rdparty/qmsgpack
+	url = https://github.com/romixlab/qmsgpack.git

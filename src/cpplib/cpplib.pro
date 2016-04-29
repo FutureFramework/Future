@@ -6,6 +6,9 @@ TEMPLATE = lib
 DEFINES += MAKE_IOTLIB
 CONFIG += c++11
 
+include(../../3rdparty/qmsgpack/qmsgpack.pri)
+INCLUDEPATH += ../../3rdparty
+
 DESTDIR = $$TOP_SRCDIR/bin
 
 HEADERS += \

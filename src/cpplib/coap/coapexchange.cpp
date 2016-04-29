@@ -74,7 +74,9 @@ CoapExchange::CoapExchange(CoapExchangePrivate &dd, QObject *parent) :
 
 CoapExchange::~CoapExchange()
 {
-    qDebug() << "Exchange to" << urlString() << "is destroyed";
+    if (d_ptr->status == Lookup ||
+            d_ptr->status == InProgress)
+        qWarning() << "Exchange to" << urlString() << "is destroyed in" << d_ptr->status << "state";
     if (d_ptr)
         delete d_ptr;
     //Q_D(CoapExchange);

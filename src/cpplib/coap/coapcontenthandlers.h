@@ -6,8 +6,8 @@
 class CoapContentHandlers
 {
 public:
-
     static QVariant unpackJSONContent(const QByteArray &data);
+    static QVariant unpackMsgPackContent(const QByteArray &data);
 
 };
 

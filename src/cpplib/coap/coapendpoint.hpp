@@ -52,6 +52,8 @@ public:
 
     Q_INVOKABLE bool bind();
 
+    void attachConfiguration(const QString &filename);
+
     QString interfaceString() const;
     void setInterfaceString(const QString &interfaceString);
     QHostAddress interface() const;

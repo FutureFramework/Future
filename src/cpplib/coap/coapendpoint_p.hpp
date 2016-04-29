@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QUdpSocket>
+#include <QTimer>
 
 class MidAddressPortKey
 {
@@ -47,6 +48,11 @@ public:
     virtual ~CoapEndpointPrivate();
 
     void setup();
+
+    QString configurationFilename;
+    QTimer configurationSaveTimer;
+    void loadConfiguration();
+    void saveConfiguration();
 
     /**
      * @brief tx towards network, pass to lower layers

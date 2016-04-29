@@ -7,6 +7,9 @@
 
 #include <QUdpSocket>
 #include <QTimer>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QDebug>
 
 CoapEndpointPrivate::CoapEndpointPrivate() :
@@ -33,6 +36,54 @@ void CoapEndpointPrivate::setup()
     // register built in content handlers
     Coap::addUnpacker((quint16)CoapMessage::ContentFormat::AppJson,
                       &CoapContentHandlers::unpackJSONContent);
+    Coap::addUnpacker((quint16)77, // TODO msgpack content format to config
+                      &CoapContentHandlers::unpackMsgPackContent);
+}
+
+void CoapEndpointPrivate::loadConfiguration()
+{
+    QFile file(configurationFilename);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "CoapEndpoint: can't load configuration" << file.errorString();
+        qDebug() << "This may be ok, if it is the first time you run your app";
+        return;
+    }
+    QJsonDocument document = QJsonDocument::fromJson(file.readAll());
+    if (document.isNull()) {
+        qWarning() << "Something wrong with configuration file, check syntax";
+        return;
+    }
+    QVariantMap configuration = document.toVariant().toMap();
+
+    Q_Q(CoapEndpoint);
+    interface = QHostAddress(configuration["interface"].toString());
+    emit q->interfaceChanged();
+
+    port = configuration["port"].toInt();
+    emit q->portChanged();
+
+    if (!bind()) {
+        qWarning() << "Can't bind, check configuration";
+    }
+}
+
+void CoapEndpointPrivate::saveConfiguration()
+{
+    if (configurationFilename.isEmpty())
+        return;
+
+    QFile file(configurationFilename);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qDebug() << "CoapEndpoint: can't save configuration" << file.errorString();
+        return;
+    }
+
+    QJsonObject map;
+    map["interface"] = interface.toString();
+    map["port"] = port;
+    file.write(QJsonDocument(map).toJson());
+
+    qDebug() << "Config saved";
 }
 
 void CoapEndpointPrivate::tx(CoapExchange *fromExchange, CoapMessage &message)
@@ -220,7 +271,6 @@ CoapEndpoint::CoapEndpoint(CoapEndpointPrivate &dd, QObject *parent) :
 
 CoapEndpoint::~CoapEndpoint()
 {
-    qDebug() << "Endpoint deleted";
     if (d_ptr) {
         delete d_ptr;
         d_ptr = 0;
@@ -241,6 +291,15 @@ bool CoapEndpoint::bind()
     return d->bind();
 }
 
+void CoapEndpoint::attachConfiguration(const QString &filename)
+{
+    Q_D(CoapEndpoint);
+    d->configurationFilename = filename;
+    d->loadConfiguration();
+    d->configurationSaveTimer.setSingleShot(true);
+    connect(&d->configurationSaveTimer, &QTimer::timeout, [d](){d->saveConfiguration();});
+}
+
 QHostAddress CoapEndpoint::interface() const
 {
     Q_D(const CoapEndpoint);
@@ -252,6 +311,7 @@ void CoapEndpoint::setInterface(const QHostAddress &interface)
     Q_D(CoapEndpoint);
     d->interface = interface;
     emit interfaceChanged();
+    d->configurationSaveTimer.start(100);
 }
 
 QString CoapEndpoint::interfaceString() const
@@ -278,6 +338,7 @@ void CoapEndpoint::setPort(quint16 port)
     Q_D(CoapEndpoint);
     d->port = port;
     emit portChanged();
+    d->configurationSaveTimer.start(100);
 }
 
 #include "moc_coapendpoint.cpp"
