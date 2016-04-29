@@ -11,7 +11,7 @@ addons:
   apt:
     packages:
     - cmake
-    - libqt5core5
+    - libqt5core5a
     - libqt5network5
     
 script:
