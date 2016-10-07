@@ -7,6 +7,9 @@
 #include <QUdpSocket>
 #include <QTimer>
 
+namespace iotlib {
+namespace coap {
+
 class MidAddressPortKey
 {
 public:
@@ -39,59 +42,54 @@ inline uint qHash(const MidAddressPortKey &key, uint seed)
 }
 
 class TimerQueue;
-class CoapExchange;
-class CoapEndpointPrivate
+class Exchange;
+class StackPrivate
 {
-    Q_DECLARE_PUBLIC(CoapEndpoint)
+    Q_DECLARE_PUBLIC(Stack)
 public:
-    CoapEndpointPrivate();
-    virtual ~CoapEndpointPrivate();
+    StackPrivate();
+    virtual ~StackPrivate();
 
     void setup();
-
-    QString configurationFilename;
-    QTimer configurationSaveTimer;
-    void loadConfiguration();
-    void saveConfiguration();
 
     /**
      * @brief tx towards network, pass to lower layers
      * @param exchange exchange that message belongs to
      * @param message pdu + address
      */
-    void tx(CoapExchange *fromExchange, CoapMessage &message);
-    void txRequest(CoapExchange *fromExchange, CoapMessage &request);
-    void txResponse(CoapExchange *fromExchange, CoapMessage &response);
-    void txEmpty(CoapExchange *fromExchange, CoapMessage &empty);
+    void tx(Exchange *fromExchange, Message &message);
+    void txRequest(Exchange *fromExchange, Message &request);
+    void txResponse(Exchange *fromExchange, Message &response);
+    void txEmpty(Exchange *fromExchange, Message &empty);
     /**
      * @brief rx from network, pass to upper layers
      * @param exchange
      * @param message
      */
-    void rx(CoapMessage &message);
-    void rxRequest(CoapMessage &request);
-    void rxResponse(CoapMessage &response);
-    void rxEmpty(CoapMessage &empty);
-    CoapEndpoint *q_ptr;
+    void rx(Message &message);
+    void rxRequest(Message &request);
+    void rxResponse(Message &response);
+    void rxEmpty(Message &empty);
+    Stack *q_ptr;
 
-    void removeExchange(CoapExchange *exchange);
+    void removeExchange(Exchange *exchange);
 
     // Network
-    QUdpSocket *udp;
-    void _q_on_udp_ready_read();
-    void sendMessage(CoapMessage &message);
-    QHostAddress interface;
-    quint16 port;
-    bool bind();
+    void _q_on_message_received(Message &message);
+    void sendMessage(Message &message);
 
     // Classification
     QByteArray generateUniqueToken();
-    quint32 currentMid;
-    QHash<MidAddressPortKey, CoapExchange *> exchangeByMid;
-    QHash<QByteArray, CoapExchange *> exchangeByToken;
+    quint16 currentMid;
+    QHash<MidAddressPortKey, Exchange *> exchangeByMid;
+    QHash<QByteArray, Exchange *> exchangeByToken;
 
     // Reliability
     TimerQueue *timerQueue;
     void _q_on_timeout(const QByteArray &key);
 };
+
+} // coap
+} // iotlib
+
 #endif // COAPENDPOINT_P_H

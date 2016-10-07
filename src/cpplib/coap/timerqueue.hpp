@@ -5,6 +5,9 @@
 
 #include <QObject>
 
+namespace iotlib {
+namespace coap {
+
 class TimerQueuePrivate;
 class TimerQueue : public QObject
 {
@@ -12,7 +15,6 @@ class TimerQueue : public QObject
 public:
     explicit TimerQueue(QObject *parent = 0);
     ~TimerQueue();
-
 
     /**
      * @brief addTimer adds timer with msec timeout after current time
@@ -32,5 +34,8 @@ protected:
 private:
     TimerQueuePrivate *d;
 };
+
+} // coap
+} // iotlib
 
 #endif // TIMERQUEUE_H

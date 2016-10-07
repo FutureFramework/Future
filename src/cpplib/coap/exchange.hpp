@@ -1,28 +1,31 @@
-#ifndef COAPEXCHANGE_H
-#define COAPEXCHANGE_H
+#ifndef COAP_EXCHANGE_H
+#define COAP_EXCHANGE_H
 
-#include "../iotlib_global.h"
+#include "iotlib_global.h"
 #include "message.hpp"
 
-class CoapEndpoint;
-class CoapEndpointPrivate;
-class CoapExchangePrivate;
-/** @file */
+namespace iotlib {
+namespace coap {
+
+class Stack;
+class StackPrivate;
+class ExchangePrivate;
+
 /**
- * @brief The CoapExchange class represents a logical conversation between CoAP client and server.
+ * @brief The Exchange class represents a logical conversation between CoAP client and server.
  * Logical means across different message id's and even tokens for block transfer.
  */
-class IOTLIB_SHARED_EXPORT CoapExchange : public QObject
+class IOTLIB_SHARED_EXPORT Exchange : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(QString uri READ urlString WRITE setUrlString NOTIFY urlChanged)
 public:
     /**
-     * @brief CoapExchange through default endpoint
+     * @brief Exchange through default endpoint
      */
-    CoapExchange(QObject *parent = 0);
-    virtual ~CoapExchange();
+    Exchange(QObject *parent = 0);
+    virtual ~Exchange();
     /**
      * @brief setUri setts uri of a resource(-s) we are going to talk to.
      * @param uri contains host address, port, path and other data
@@ -64,7 +67,7 @@ public:
     QVariant content() const;
 
     /**
-     * @brief deleteAfterComplete controls lifetime of CoapExchange object.
+     * @brief deleteAfterComplete controls lifetime of Exchange object.
      * Call this function to automatically remove exchange after answer war received or timeout occured.
      * Default value is false
      */
@@ -80,21 +83,24 @@ protected:
      * @brief handle is called when PDU, associated with this exchange arrives
      * @param pdu
      */
-    virtual void handle(CoapMessage &message);
+    virtual void handle(Message &message);
     virtual void handleError();
     /**
      * @brief send sends pdu to remote server or client
      * @param pdu
      */
-    void send(CoapMessage &message);
+    void send(Message &message);
 
-    CoapExchange(CoapExchangePrivate &dd, QObject *parent = 0);
-    CoapExchangePrivate *d_ptr;
+    Exchange(ExchangePrivate &dd, QObject *parent = 0);
+    ExchangePrivate *d_ptr;
 private:
-    Q_DECLARE_PRIVATE(CoapExchange)
+    Q_DECLARE_PRIVATE(Exchange)
     Q_PRIVATE_SLOT(d_func(), void _q_looked_up(const QHostInfo &))
-    friend class CoapEndpoint;
-    friend class CoapEndpointPrivate;
+    friend class Stack;
+    friend class StackPrivate;
 };
 
-#endif // COAPEXCHANGE_H
+} // coap
+} // iotlib
+
+#endif // COAP_EXCHANGE_H

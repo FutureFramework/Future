@@ -8,7 +8,7 @@
 struct CoapPrivate {
     CoapPrivate() {}
     ~CoapPrivate() {}
-    QList<CoapEndpoint *> endpoints;
+    QList<iotlib::coap::Stack *> stacks;
     QHash<quint16, payload_unpacker_f> unpackers;
 };
 
@@ -17,38 +17,22 @@ Q_GLOBAL_STATIC(CoapPrivate, coap_private)
 Coap::Coap()
 { }
 
-CoapEndpoint *Coap::defaultEndpoint()
+iotlib::coap::Stack *Coap::defaultStack()
 {
     CoapPrivate *d = coap_private;
-    if (!d || d->endpoints.isEmpty()) {
+    if (!d || d->stacks.isEmpty()) {
         qWarning() << "Coap::defaultEndpoint(): no default endpoint";
         return 0;
     }
-    return d->endpoints.at(0);
+    return d->stacks.at(0);
 }
 
-void Coap::addEndpoint(CoapEndpoint *endpoint)
+void Coap::addStack(iotlib::coap::Stack *stack)
 {
     CoapPrivate *d = coap_private;
     if (!d)
         return;
-    d->endpoints.append(endpoint);
-}
-
-void Coap::removeEndpoint(CoapEndpoint *endpoint)
-{
-    CoapPrivate *d = coap_private;
-    if (!d)
-        return;
-    d->endpoints.removeOne(endpoint);
-}
-
-QList<CoapEndpoint *> Coap::endpoints()
-{
-    CoapPrivate *d = coap_private;
-    if (!d)
-        return QList<CoapEndpoint *>();
-    return d->endpoints;
+    d->stacks.append(stack);
 }
 
 void Coap::addUnpacker(quint16 contentFormat, payload_unpacker_f unpacker)

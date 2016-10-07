@@ -9,14 +9,17 @@
 typedef QVariant (*payload_unpacker_f)(const QByteArray &packed);
 typedef QByteArray (*payload_packer_f)(const QVariant &data);
 
-class CoapEndpoint;
+namespace iotlib {
+namespace coap {
+class Stack;
+}
+}
+
 class IOTLIB_SHARED_EXPORT Coap
 {
 public:
-    static CoapEndpoint *defaultEndpoint();
-    static void addEndpoint(CoapEndpoint *endpoint);
-    static void removeEndpoint(CoapEndpoint *endpoint);
-    static QList<CoapEndpoint *> endpoints();
+    static iotlib::coap::Stack *defaultStack();
+    static void addStack(iotlib::coap::Stack *stack);
 
     static void addUnpacker(quint16 contentFormat, payload_unpacker_f unpacker);
     static payload_unpacker_f unpacker(quint16 contentFormat);

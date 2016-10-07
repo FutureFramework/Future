@@ -5,7 +5,8 @@
 #include <QDebug>
 #include <QMetaEnum>
 
-using namespace iotlib::coap;
+namespace iotlib {
+namespace coap {
 
 Option::Option()
     : m_type((Message::OptionType)0)
@@ -34,6 +35,8 @@ bool Option::operator ==(const Option &other)
 {
     return (m_type == other.m_type) && (m_data == other.m_data);
 }
+
+
 
 class MessagePrivate : public QSharedData
 {
@@ -81,8 +84,58 @@ public:
         WRONG_VERSION          = 64,
         WRONG_TOKEN            = 128,
     };
-    Error error;
+    Q_DECLARE_FLAGS(Errors, Error)
+    Errors errors;
 };
+
+Address::Address()
+{
+}
+
+Address::Address(const QString &address) : m_address(address)
+{
+}
+
+Address::Address(const QHostAddress &hostAddress, quint16 port) :
+    m_hostAddress(hostAddress), m_port(port)
+{
+}
+
+Address Address::setHostAddress(const QHostAddress &hostAddress)
+{
+    m_hostAddress = hostAddress;
+    return *this;
+}
+
+QHostAddress Address::hostAddress() const
+{
+    return m_hostAddress;
+}
+
+Address Address::setPort(quint16 port)
+{
+    m_port = port;
+    return *this;
+}
+
+quint16 Address::port() const
+{
+    return m_port;
+}
+
+Address Address::setAddress(const QString &address)
+{
+    m_address = address;
+    m_hostAddress = QHostAddress(address);
+    return *this;
+}
+
+QString Address::address() const
+{
+    if (m_address.isEmpty())
+        return m_hostAddress.toString();
+    return m_address;
+}
 
 Message::Message()
     : d(new MessagePrivate)
@@ -112,7 +165,7 @@ void Message::setVersion(quint8 version)
 {
     d->version = version;
     if (version != 1)
-        d->errors |= Error::WRONG_VERSION;
+        d->errors |= MessagePrivate::WRONG_VERSION;
 }
 
 quint8 Message::version() const
@@ -166,7 +219,7 @@ void Message::setToken(const QByteArray &token)
         return;
     d->token = token;
     if (token.length() > 8)
-        d->errors |= Error::WRONG_TOKEN;
+        d->errors |= MessagePrivate::WRONG_TOKEN;
 }
 
 void Message::setToken(const char *token, quint8 length)
@@ -176,7 +229,7 @@ void Message::setToken(const char *token, quint8 length)
         return;
     d->token = t;
     if (length > 8)
-        d->errors |= Error::WRONG_TOKEN;
+        d->errors |= MessagePrivate::WRONG_TOKEN;
 }
 
 QByteArray Message::token() const
@@ -351,25 +404,25 @@ QByteArray Message::pack() const
 
 void Message::unpack(const QByteArray &packed)
 {
-    d->errors = Errors(0);
+    d->errors = MessagePrivate::Errors(0);
     d->options.clear();
     quint8 *p = (quint8 *)packed.data();
     quint8 *pend = (quint8 *)packed.data() + packed.size() - 1;
 
     if (packed.size() < 4) {
-        d->errors |= Error::FORMAT_ERROR;
+        d->errors |= MessagePrivate::FORMAT_ERROR;
         return;
     }
 
     d->version = (p[0] & 0xc0) >> 6;
     if (d->version != 1)
-        d->errors |= Error::UNKNOWN_VERSION;
+        d->errors |= MessagePrivate::UNKNOWN_VERSION;
 
     d->type = (Message::Type)( (p[0] & 0x30) >> 4 );
     quint8 tokenLength = (p[0] & 0xf);
     d->code = (Message::Code)p[1];
     if (tokenLength > 8)
-        d->errors |= Error::WRONG_TOKEN_LENGTH;
+        d->errors |= MessagePrivate::WRONG_TOKEN_LENGTH;
     else
         d->token = QByteArray((const char *)p + 4, tokenLength);
 
@@ -386,7 +439,7 @@ void Message::unpack(const QByteArray &packed)
         if (*p == 0xff) {
             quint32 payloadSize = pend - p;
             if (payloadSize == 0)
-                d->errors |= Error::WRONG_PAYLOAD_MARKER;
+                d->errors |= MessagePrivate::WRONG_PAYLOAD_MARKER;
             d->payload = QByteArray((const char *)p + 1, payloadSize);
             return;
         }
@@ -401,7 +454,7 @@ void Message::unpack(const QByteArray &packed)
             optionDelta = endian_load16(quint16, p);
             p += 2;
         } else if (optionDelta == 15) {
-            d->errors |= Error::WRONG_PAYLOAD_MARKER;
+            d->errors |= MessagePrivate::WRONG_PAYLOAD_MARKER;
             return;
         }
         if (optionLength == 13) {
@@ -411,7 +464,7 @@ void Message::unpack(const QByteArray &packed)
             optionLength = endian_load16(quint16, p);
             p += 2;
         } else if (optionLength == 15) {
-            d->errors |= Error::WRONG_PAYLOAD_MARKER;
+            d->errors |= MessagePrivate::WRONG_PAYLOAD_MARKER;
             return;
         }
 
@@ -422,41 +475,28 @@ void Message::unpack(const QByteArray &packed)
     } while (p <= pend);
 
     if (p > pend + 1)
-        d->errors |= Error::NOT_ENOUGH_DATA;
+        d->errors |= MessagePrivate::NOT_ENOUGH_DATA;
 }
 
-QHostAddress Message::address() const
+Address Message::address() const
 {
-    return d->address;
+
 }
 
-void Message::setAddress(const QHostAddress &address)
+void Message::setAddress(const Address &address)
 {
-    d->address = address;
-}
 
-quint16 Message::port() const
-{
-    return d->port;
-}
-
-void Message::setPort(quint16 port)
-{
-    d->port = port;
-}
-
-Message::Errors Message::errors() const
-{
-    return d->errors;
 }
 
 bool Message::isValid() const
 {
-    return d->errors == Errors(0);
+    return d->errors == MessagePrivate::Errors(0);
 }
 
+} // iotlib
+} // coap
 
-QDebug operator<<(QDebug debug, const Message &pdu)
+QDebug operator<<(QDebug debug, const iotlib::coap::Message &pdu)
 {
     QDebugStateSaver saver(debug);
     debug.nospace();

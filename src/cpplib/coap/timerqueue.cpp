@@ -4,6 +4,9 @@
 
 #include "timerqueue.hpp"
 
+namespace iotlib {
+namespace coap {
+
 typedef struct {
     QDateTime dt;
     QByteArray key;
@@ -15,13 +18,17 @@ public:
     QList<coap_timer_t> queue;
 };
 
-TimerQueue::TimerQueue(QObject *parent) :
-    QObject(parent), d(new TimerQueuePrivate)
+}
+}
+
+
+iotlib::coap::TimerQueue::TimerQueue(QObject *parent) :
+    QObject(parent), d(new iotlib::coap::TimerQueuePrivate)
 {
 
 }
 
-TimerQueue::~TimerQueue()
+iotlib::coap::TimerQueue::~TimerQueue()
 {
     if (d) {
         delete d;
@@ -29,7 +36,7 @@ TimerQueue::~TimerQueue()
     }
 }
 
-void TimerQueue::addTimer(quint32 msec, const QByteArray &key)
+void iotlib::coap::TimerQueue::addTimer(quint32 msec, const QByteArray &key)
 {
     QDateTime dt = QDateTime::currentDateTime().addMSecs(msec);
     int idx = 0;
@@ -45,7 +52,7 @@ void TimerQueue::addTimer(quint32 msec, const QByteArray &key)
         d->timer.start(msec, this);
 }
 
-void TimerQueue::removeTimer(const QByteArray &key)
+void iotlib::coap::TimerQueue::removeTimer(const QByteArray &key)
 {
     int i = 0;
     for (; i < d->queue.size(); ++i)
@@ -66,7 +73,7 @@ void TimerQueue::removeTimer(const QByteArray &key)
     }
 }
 
-void TimerQueue::timerEvent(QTimerEvent *e)
+void iotlib::coap::TimerQueue::timerEvent(QTimerEvent *e)
 {
     Q_UNUSED(e);
     coap_timer_t &timer = d->queue.front();

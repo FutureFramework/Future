@@ -5,139 +5,142 @@
 
 #include <QJSValue>
 
-CoapExchangePrivate::CoapExchangePrivate() :
-    status(CoapExchange::Initial),
+iotlib::coap::ExchangePrivate::ExchangePrivate() :
+    status(iotlib::coap::Exchange::Initial),
     sendAfterLookup(false),
     deleteAfterComplete(false),
     observe(false)
 {
 }
 
-CoapExchangePrivate::~CoapExchangePrivate()
+iotlib::coap::ExchangePrivate::~ExchangePrivate()
 {
 
 }
 
-void CoapExchangePrivate::setStatus(CoapExchange::Status status)
+void iotlib::coap::ExchangePrivate::setStatus(iotlib::coap::Exchange::Status status)
 {
-    Q_Q(CoapExchange);
+    Q_Q(iotlib::coap::Exchange);
     this->status = status;
     emit q->statusChanged();
 }
 
-void CoapExchangePrivate::_q_looked_up(const QHostInfo &info)
+void iotlib::coap::ExchangePrivate::_q_looked_up(const QHostInfo &info)
 {
     qDebug() << "lookup complete" << info.addresses();
-    Q_Q(CoapExchange);
+    Q_Q(iotlib::coap::Exchange);
     if (info.error() == QHostInfo::NoError) {
-        QHostAddress address = info.addresses()[0];
+        Address address = message.address();
+        address.setHostAddress(info.addresses()[0]);
         message.setAddress(address);
         if (sendAfterLookup) {
-            setStatus(CoapExchange::InProgress);
+            setStatus(iotlib::coap::Exchange::InProgress);
             q->send(message);
         } else {
-            setStatus(CoapExchange::Ready);
+            setStatus(iotlib::coap::Exchange::Ready);
         }
     } else {
-        setStatus(CoapExchange::LookupFailed);
+        setStatus(iotlib::coap::Exchange::LookupFailed);
     }
 }
 
-bool CoapExchangePrivate::isReady()
+bool iotlib::coap::ExchangePrivate::isReady()
 {
-    if (status == CoapExchange::InProgress) {
+    if (status == iotlib::coap::Exchange::InProgress) {
         return false;
     } else {
         return true;
     }
 }
 
-CoapExchange::CoapExchange(QObject *parent) :
-    QObject(parent), d_ptr(new CoapExchangePrivate)
+iotlib::coap::Exchange::Exchange(QObject *parent) :
+    QObject(parent), d_ptr(new iotlib::coap::ExchangePrivate)
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     d->q_ptr = this;
-    d->endpoint = Coap::defaultEndpoint();
+    d->stack = Coap::defaultStack();
     if (!parent)
-        setParent(d->endpoint);
+        setParent(d->stack);
 }
 
-CoapExchange::CoapExchange(CoapExchangePrivate &dd, QObject *parent) :
+iotlib::coap::Exchange::Exchange(iotlib::coap::ExchangePrivate &dd, QObject *parent) :
     QObject(parent), d_ptr(&dd)
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     d->q_ptr = this;
-    d->endpoint = Coap::defaultEndpoint();
+    d->stack = Coap::defaultStack();
     if (!parent)
-        setParent(d->endpoint);
+        setParent(d->stack);
 }
 
-CoapExchange::~CoapExchange()
+iotlib::coap::Exchange::~Exchange()
 {
     if (d_ptr->status == Lookup ||
             d_ptr->status == InProgress)
-        qWarning() << "Exchange to" << urlString() << "is destroyed in" << d_ptr->status << "state";
+        qWarning() << "iotlib::coap::Exchange to" << urlString() << "is destroyed in" << d_ptr->status << "state";
     if (d_ptr)
         delete d_ptr;
-    //Q_D(CoapExchange);
-//    d->endpoint->d_ptr->remove_exchange(this);
+    //Q_D(iotlib::coap::Exchange);
+//    d->endpoint->d_ptr->remove_iotlib::coap::Exchange(this);
 }
 
-void CoapExchange::setUrl(const QUrl &url)
+void iotlib::coap::Exchange::setUrl(const QUrl &url)
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     if (status() == InProgress) {
-        qWarning() << "Exchange is InProgress, can't change uri";
+        qWarning() << "iotlib::coap::Exchange is InProgress, can't change uri";
         return;
     }
-    if (d->message.address().isNull()) {
+    if (d->message.address().hostAddress().isNull()) {
         QHostAddress hostAddress = QHostAddress(url.host());
         if (hostAddress.isNull()) {
             d->setStatus(Lookup);
             QHostInfo::lookupHost(url.host(), this, SLOT(_q_looked_up(QHostInfo)));
         } else {
-            d->message.setAddress(hostAddress);
+            d->message.setAddress(Address(hostAddress, 0));
         }
     }
     d->message.setUrl(url);
-    d->message.setPort(url.port(5683));
+    Address address = d->message.address();
+    address.setPort(url.port(5683));
+    d->message.setAddress(address);
     d->url = url;
     emit urlChanged();
 }
 
-QUrl CoapExchange::url() const
+QUrl iotlib::coap::Exchange::url() const
 {
-    Q_D(const CoapExchange);
+    Q_D(const iotlib::coap::Exchange);
     return d->url;
 }
 
-void CoapExchange::setUrlString(const QString &urlString)
+void iotlib::coap::Exchange::setUrlString(const QString &urlString)
 {
     setUrl(QUrl(urlString));
 }
 
-QString CoapExchange::urlString() const
+QString iotlib::coap::Exchange::urlString() const
 {
-    Q_D(const CoapExchange);
+    Q_D(const iotlib::coap::Exchange);
     return d->url.toString();
 }
 
-CoapExchange::Status CoapExchange::status() const
+iotlib::coap::Exchange::Status iotlib::coap::Exchange::status() const
 {
-    Q_D(const CoapExchange);
+    Q_D(const iotlib::coap::Exchange);
     return d->status;
 }
 
-void CoapExchange::get()
+void iotlib::coap::Exchange::get()
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     if (!d->isReady()) {
-        qWarning() << "CoapExchange::get() failed, exchange is InProgress state";
+        qWarning() << "iotlib::coap::Exchange::get() failed, iotlib::coap::Exchange is InProgress state";
         return;
     }
 
-    d->message.setCode(CoapMessage::Code::Get);
-    d->message.setType(CoapMessage::Type::Confirmable);
+    d->message.setCode(Message::Code::Get);
+    d->message.setType(Message::Type::Confirmable);
     if (status() == Lookup) {
         d->sendAfterLookup = true;
     } else {
@@ -146,57 +149,57 @@ void CoapExchange::get()
     }
 }
 
-void CoapExchange::observe()
+void iotlib::coap::Exchange::observe()
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     if (!d->isReady())
         return;
     d->setStatus(InProgress);
     d->observe = true;
 
-    CoapMessage get;
-    get.setCode(CoapMessage::Code::Get);
-    get.setType(CoapMessage::Type::Confirmable);
-    get.addOption(CoapMessage::OptionType::Observe);
+    Message get;
+    get.setCode(Message::Code::Get);
+    get.setType(Message::Type::Confirmable);
+    get.addOption(Message::OptionType::Observe);
     get.setUrl(d->url);
     send(get);
 }
 
-void CoapExchange::cancel()
+void iotlib::coap::Exchange::cancel()
 {
-    Q_D(CoapExchange);
-    d->endpoint->d_ptr->removeExchange(this);
+    Q_D(iotlib::coap::Exchange);
+    d->stack->d_ptr->removeExchange(this);
     d->setStatus(Ready);
 }
 
-QByteArray CoapExchange::contentRaw() const
+QByteArray iotlib::coap::Exchange::contentRaw() const
 {
-    Q_D(const CoapExchange);
+    Q_D(const iotlib::coap::Exchange);
     return d->message.content();
 }
 
-QVariant CoapExchange::content() const
+QVariant iotlib::coap::Exchange::content() const
 {
-    Q_D(const CoapExchange);
+    Q_D(const iotlib::coap::Exchange);
     payload_unpacker_f unpacker = Coap::unpacker((quint16)d->message.contentFormat());
     if (!unpacker) {
-        qWarning() << "CoapExchange::payload(): no unpacker for content format" << d->message.contentFormat();
+        qWarning() << "iotlib::coap::Exchange::payload(): no unpacker for content format" << d->message.contentFormat();
         return QVariant();
     }
     return unpacker(d->message.content());
 }
 
-void CoapExchange::deleteAfterComplete()
+void iotlib::coap::Exchange::deleteAfterComplete()
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     d->deleteAfterComplete = true;
 }
 
-void CoapExchange::handle(CoapMessage &message)
+void iotlib::coap::Exchange::handle(Message &message)
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     d->message = message;
-    if (message.code() == CoapMessage::Code::Content) {
+    if (message.code() == Message::Code::Content) {
         //d->lambdaCompleted();
         if (!d->observe) {
             emit completed();
@@ -213,9 +216,9 @@ void CoapExchange::handle(CoapMessage &message)
         deleteLater();
 }
 
-void CoapExchange::handleError()
+void iotlib::coap::Exchange::handleError()
 {
-    Q_D(CoapExchange);
+    Q_D(iotlib::coap::Exchange);
     emit timeout();
     d->setStatus(TimedOut);
 
@@ -223,14 +226,14 @@ void CoapExchange::handleError()
         deleteLater();
 }
 
-void CoapExchange::send(CoapMessage &message)
+void iotlib::coap::Exchange::send(Message &message)
 {
-    Q_D(CoapExchange);
-    if (!d->endpoint) {
+    Q_D(iotlib::coap::Exchange);
+    if (!d->stack) {
         qWarning() << "Can't send a message without CoapEndpoint, create it first";
         return;
     }
-    d->endpoint->d_ptr->tx(this, message);
+    d->stack->d_ptr->tx(this, message);
 }
 
-#include "moc_coapexchange.cpp"
+#include "moc_exchange.cpp"

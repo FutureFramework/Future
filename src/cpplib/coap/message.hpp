@@ -137,12 +137,9 @@ public:
     Address address() const;
     void setAddress(const Address &address);
 
-
-
     QString errorString() const;
     bool isValid() const;
     bool isNull() const;
-
 
 private:
     QSharedDataPointer<MessagePrivate> d;
@@ -155,13 +152,13 @@ public:
     Address(const QString &address);
     Address(const QHostAddress &hostAddress, quint16 port);
 
-    void setHostAddress(const QHostAddress &hostAddress);
+    Address setHostAddress(const QHostAddress &hostAddress);
     QHostAddress hostAddress() const;
 
+    Address setPort(quint16 port);
     quint16 port() const;
-    void setPort(quint16 port);
 
-    void setAddress(const QString &address);
+    Address setAddress(const QString &address);
     QString address() const;
 
 private:

@@ -1,5 +1,5 @@
-#ifndef COAPENDPOINT_H
-#define COAPENDPOINT_H
+#ifndef COAP_STACK_H
+#define COAP_STACK_H
 
 #include "../iotlib_global.h"
 #include "message.hpp"
@@ -9,36 +9,39 @@
 #include <QNetworkInterface>
 #include <QUrl>
 
+
+namespace iotlib {
+namespace coap {
+
 class CoapExchange;
-class CoapEndpointPrivate;
+class StackPrivate;
 /** @file */
 /**
- * @brief The CoapEndpoint class
+ * @brief The iotlib::coap::Stack class
  * Handles all the CoAP communications
  */
-class IOTLIB_SHARED_EXPORT CoapEndpoint : public QObject
+class IOTLIB_SHARED_EXPORT Stack : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString address READ interfaceString WRITE setInterfaceString NOTIFY interfaceChanged)
-    Q_PROPERTY(int port READ port WRITE setPort NOTIFY portChanged)
 public:
 
+
     /**
-     * @brief CoapEndpoint Initialize endpoint
+     * @brief iotlib::coap::Stack Initialize endpoint
      * @param endpointType Client or ClientServer @see Type
      * @param endpointName Name of this endpoint, useful when there is more that one endpoint
      * @param parent
      * Note that endpointName is used only to find this endpoint later by calling Coap::endpoint("name")
-     * CoapEndpointInfo::name() is in contrast used in communications with other CoAP nodes
+     * iotlib::coap::StackInfo::name() is in contrast used in communications with other CoAP nodes
      */
-    CoapEndpoint(QObject *parent = 0);
+    Stack(QObject *parent = 0);
 
     /**
-     * @brief ~CoapEndpoint Destroy everything and close sockets
+     * @brief ~iotlib::coap::Stack Destroy everything and close sockets
      * If requestCertificate() was previously called, then before destroying multicast message is sended out,
      * to group provision, indicating that endpoint is shutting down
      */
-    virtual ~CoapEndpoint();
+    virtual ~Stack();
 
     /**
      * @brief bind Bind on specific interface and port
@@ -48,19 +51,7 @@ public:
      * If port is 0 then 5683 will be used in a case of ClientServer mode and some free port in a case of Client mode.
      * Note that multicast interface is configured using @see bindMulticast method
      */
-    bool bind(const QHostAddress &interace, quint16 port = 0);
 
-    Q_INVOKABLE bool bind();
-
-    void attachConfiguration(const QString &filename);
-
-    QString interfaceString() const;
-    void setInterfaceString(const QString &interfaceString);
-    QHostAddress interface() const;
-    void setInterface(const QHostAddress &interface);
-
-    quint16 port() const;
-    void setPort(quint16 port);
 
     /**
      * @brief bindMulticast Bind for multicast exchanges
@@ -69,13 +60,13 @@ public:
      * @return true on success
      * Note that enabling multicast without any protection is not recommended by RFC7252 11.3
      */
-    bool bindMulticast(const QHostAddress &groupAddress, const QNetworkInterface & iface);
+
 
     /**
      * @brief setEndpointInfo Provide an info about this endpoint
      * @param endpointInfo Class that contains endpoint name, endpoint groups, etc
      */
-//    void setEndpointInfo(const CoapEndpointInfo &endpointInfo);
+//    void setEndpointInfo(const iotlib::coap::StackInfo &endpointInfo);
 
     /**
      * @brief setTransmissionParameters Configure transmissions timeouts, speed, etc
@@ -87,7 +78,7 @@ public:
      * @brief setCertificate Set certificate for encrypting all the traffic
      * @param certificateFile PKCS file containing root ca certificate, endpoint certificate and key
      */
-    void setCertificate(const QString &certificateFile);
+
 
     /**
      * @brief startProvision initiates a provision process.
@@ -104,7 +95,7 @@ public:
      * @todo Provision server
      * @todo certificate is stored in unencrypted way, and may be stolen, need a solution here.
      */
-    void startProvision();
+
 
     /**
      * @brief routeRequestsToProxy Perform all coap:// and coaps:// exchanges through proxy
@@ -115,22 +106,19 @@ public:
      * Note that proxy must be configured properly for this method to function
      * @todo Such a proxy
      */
-    void routeRequestsToProxy(const QUrl &proxyAddress);
-
-signals:
-    void interfaceChanged();
-    void portChanged();
-    void endpointTypeChanged();
 
 protected:
-    CoapEndpointPrivate * d_ptr;
-    CoapEndpoint(CoapEndpointPrivate &dd, QObject *parent);
+    StackPrivate * d_ptr;
+    Stack(StackPrivate &dd, QObject *parent);
 private:
-    Q_DECLARE_PRIVATE(CoapEndpoint)
-    Q_PRIVATE_SLOT(d_func(), void _q_on_udp_ready_read())
+    Q_DECLARE_PRIVATE(iotlib::coap::Stack)
+    Q_PRIVATE_SLOT(d_func(), void _q_on_message_received(Message &message))
     Q_PRIVATE_SLOT(d_func(), void _q_on_timeout(const QByteArray &))
-    friend class CoapExchange;
-    friend class CoapExchangePrivate;
+    friend class Exchange;
+    friend class ExchangePrivate;
 };
 
-#endif // COAPENDPOINT_H
+} // coap
+} // iotlib
+
+#endif // COAP_STACK_H

@@ -12,35 +12,31 @@
 #include <QJsonObject>
 #include <QDebug>
 
-CoapEndpointPrivate::CoapEndpointPrivate() :
-    interface(QHostAddress::Null), port(0)
+iotlib::coap::StackPrivate::StackPrivate()
 {   
 }
 
-CoapEndpointPrivate::~CoapEndpointPrivate()
+iotlib::coap::StackPrivate::~StackPrivate()
 {
 }
 
-void CoapEndpointPrivate::setup()
+void iotlib::coap::StackPrivate::setup()
 {
-    Q_Q(CoapEndpoint);
-    Coap::addEndpoint(q);
-    udp = new QUdpSocket(q);
-    QObject::connect(udp, SIGNAL(readyRead()),
-                     q,   SLOT(_q_on_udp_ready_read()));
+    Q_Q(iotlib::coap::Stack);
+    Coap::addStack(q);
 
     timerQueue = new TimerQueue(q);
     QObject::connect(timerQueue, SIGNAL(timeout(QByteArray)),
                      q,          SLOT(_q_on_timeout(QByteArray)));
 
     // register built in content handlers
-    Coap::addUnpacker((quint16)iotlib::coap::Message::ContentFormat::AppJson,
-                      &CoapContentHandlers::unpackJSONContent);
-    Coap::addUnpacker((quint16)77, // TODO msgpack content format to config
-                      &CoapContentHandlers::unpackMsgPackContent);
+//    Coap::addUnpacker((quint16)iotlib::coap::Message::ContentFormat::AppJson,
+//                      &CoapContentHandlers::unpackJSONContent);
+//    Coap::addUnpacker((quint16)77, // TODO msgpack content format to config
+//                      &CoapContentHandlers::unpackMsgPackContent);
 }
 
-void CoapEndpointPrivate::tx(CoapExchange *fromExchange, iotlib::coap::Message &message)
+void iotlib::coap::StackPrivate::tx(Exchange *fromExchange, iotlib::coap::Message &message)
 {
     if (message.isRequest())
         txRequest(fromExchange, message);
@@ -50,12 +46,12 @@ void CoapEndpointPrivate::tx(CoapExchange *fromExchange, iotlib::coap::Message &
         txEmpty(fromExchange, message);
 }
 
-void CoapEndpointPrivate::txRequest(CoapExchange *fromExchange, iotlib::coap::Message &request)
+void iotlib::coap::StackPrivate::txRequest(Exchange *fromExchange, iotlib::coap::Message &request)
 {
     removeExchange(fromExchange); // remove previous data
 
     if (request.messageId() == 0)
-        request.setMessageId((currentMid++) % 65536);
+        request.setMessageId(currentMid++);
 
 //    MidAddressPortKey midKey(request.messageId());
 //    exchangeByMid.insert(midKey, fromExchange);
@@ -78,7 +74,7 @@ void CoapEndpointPrivate::txRequest(CoapExchange *fromExchange, iotlib::coap::Me
     sendMessage(request);
 }
 
-QByteArray CoapEndpointPrivate::generateUniqueToken()
+QByteArray iotlib::coap::StackPrivate::generateUniqueToken()
 {
     QByteArray token;
     // TODO token size from config
@@ -91,9 +87,9 @@ QByteArray CoapEndpointPrivate::generateUniqueToken()
     return token;
 }
 
-void CoapEndpointPrivate::_q_on_timeout(const QByteArray &key)
+void iotlib::coap::StackPrivate::_q_on_timeout(const QByteArray &key)
 {
-    CoapExchange *exchange = exchangeByToken.value(key, 0);
+    Exchange *exchange = exchangeByToken.value(key, 0);
     if (!exchange)
         return;
     if (++exchange->d_ptr->retransmissionCount == 4) { // give up
@@ -104,18 +100,18 @@ void CoapEndpointPrivate::_q_on_timeout(const QByteArray &key)
     }
 }
 
-void CoapEndpointPrivate::txResponse(CoapExchange *fromExchange, iotlib::coap::Message &response)
+void iotlib::coap::StackPrivate::txResponse(Exchange *fromExchange, iotlib::coap::Message &response)
 {
 
 }
 
-void CoapEndpointPrivate::txEmpty(CoapExchange *fromExchange, iotlib::coap::Message &empty)
+void iotlib::coap::StackPrivate::txEmpty(Exchange *fromExchange, iotlib::coap::Message &empty)
 {
     Q_UNUSED(fromExchange);
     sendMessage(empty);
 }
 
-void CoapEndpointPrivate::rx(iotlib::coap::Message &message)
+void iotlib::coap::StackPrivate::rx(iotlib::coap::Message &message)
 {
     if (message.isRequest())
         rxRequest(message);
@@ -125,18 +121,18 @@ void CoapEndpointPrivate::rx(iotlib::coap::Message &message)
         rxEmpty(message);
 }
 
-void CoapEndpointPrivate::rxRequest(iotlib::coap::Message &request)
+void iotlib::coap::StackPrivate::rxRequest(iotlib::coap::Message &request)
 {
 
 }
 
-void CoapEndpointPrivate::rxResponse(iotlib::coap::Message &response)
+void iotlib::coap::StackPrivate::rxResponse(iotlib::coap::Message &response)
 {
     if (response.type() == iotlib::coap::Message::Type::Reset) {
         qDebug() << "Ignoring response with Type::Reset";
         return;
     }
-    CoapExchange *exchange = exchangeByToken.value(response.token(), 0);
+    Exchange *exchange = exchangeByToken.value(response.token(), 0);
     if (exchange) {
         qDebug() << "found exchange" << exchange;
         timerQueue->removeTimer(response.token());
@@ -145,7 +141,6 @@ void CoapEndpointPrivate::rxResponse(iotlib::coap::Message &response)
         qDebug() << "Strange or after observe response received, RST it";
         iotlib::coap::Message rst;
         rst.setAddress(response.address());
-        rst.setPort(response.port());
         rst.setType(iotlib::coap::Message::Type::Reset);
         rst.setToken(response.token());
         rst.setMessageId(response.messageId());
@@ -153,12 +148,12 @@ void CoapEndpointPrivate::rxResponse(iotlib::coap::Message &response)
     }
 }
 
-void CoapEndpointPrivate::rxEmpty(iotlib::coap::Message &empty)
+void iotlib::coap::StackPrivate::rxEmpty(iotlib::coap::Message &empty)
 {
 
 }
 
-void CoapEndpointPrivate::removeExchange(CoapExchange *exchange)
+void iotlib::coap::StackPrivate::removeExchange(Exchange *exchange)
 {
     QByteArray token = exchangeByToken.key(exchange);
     if (token.isEmpty())
@@ -168,23 +163,28 @@ void CoapEndpointPrivate::removeExchange(CoapExchange *exchange)
     timerQueue->removeTimer(token);
 }
 
-CoapEndpoint::CoapEndpoint(QObject *parent) :
-    QObject(parent), d_ptr(new CoapEndpointPrivate)
+void iotlib::coap::StackPrivate::_q_on_message_received(Message &message)
 {
-    Q_D(CoapEndpoint);
+
+}
+
+iotlib::coap::Stack::Stack(QObject *parent) :
+    QObject(parent), d_ptr(new iotlib::coap::StackPrivate)
+{
+    Q_D(iotlib::coap::Stack);
     d->q_ptr = this;
     d->setup();
 }
 
-CoapEndpoint::CoapEndpoint(CoapEndpointPrivate &dd, QObject *parent) :
+iotlib::coap::Stack::Stack(iotlib::coap::StackPrivate &dd, QObject *parent) :
     QObject(parent), d_ptr(&dd)
 {
-    Q_D(CoapEndpoint);
+    Q_D(iotlib::coap::Stack);
     d->q_ptr = this;
     d->setup();
 }
 
-CoapEndpoint::~CoapEndpoint()
+iotlib::coap::Stack::~Stack()
 {
     if (d_ptr) {
         delete d_ptr;
@@ -192,4 +192,4 @@ CoapEndpoint::~CoapEndpoint()
     }
 }
 
-#include "moc_coapendpoint.cpp"
+#include "moc_stack.cpp"

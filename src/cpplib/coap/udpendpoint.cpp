@@ -20,7 +20,7 @@ void iotlib::coap::UdpEndpoint::send(const iotlib::coap::Message &coapMessage)
              << coapMessage.address().port();
     m_socket->writeDatagram(packed,
                             coapMessage.address().hostAddress(),
-                            coapMessage.address().port();
+                            coapMessage.address().port());
 }
 
 void iotlib::coap::UdpEndpoint::onSettingsChanged()

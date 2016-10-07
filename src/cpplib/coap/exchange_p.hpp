@@ -8,25 +8,28 @@
 #include <QHostInfo>
 #include <QUrl>
 
-class CoapEndpoint;
-class CoapExchangePrivate
+namespace iotlib {
+namespace coap {
+
+class Stack;
+class ExchangePrivate
 {
-    Q_DECLARE_PUBLIC(CoapExchange)
+    Q_DECLARE_PUBLIC(Exchange)
 public:
-    CoapExchangePrivate();
-    virtual ~CoapExchangePrivate();
+    ExchangePrivate();
+    virtual ~ExchangePrivate();
 
-    CoapExchange *q_ptr;
+    Exchange *q_ptr;
 
-    CoapEndpoint *endpoint;
+    Stack *stack;
 
-    CoapExchange::Status status;
-    void setStatus(CoapExchange::Status status);
+    Exchange::Status status;
+    void setStatus(Exchange::Status status);
 
     void _q_looked_up(const QHostInfo &info);
 
     quint8 retransmissionCount;
-    CoapMessage message;
+    Message message;
     QUrl url;
     QByteArray payload;
 
@@ -36,6 +39,9 @@ public:
 
     bool isReady();
 };
+
+} // coap
+} // iotlib
 
 #endif // COAP_EXCHANGE_P_H
 
