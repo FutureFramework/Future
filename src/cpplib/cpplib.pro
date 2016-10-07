@@ -14,19 +14,24 @@ DESTDIR = $$TOP_SRCDIR/bin
 HEADERS += \
     iotlib_global.h \
     coap/coap.hpp \
-    coap/coapendpoint.hpp \
-    coap/coapendpoint_p.hpp \
-    coap/coapexchange.hpp \
-    coap/coapexchange_p.hpp \
-    coap/coapmessage.hpp \
     coap/timerqueue.hpp \
     endianhelper.h \
-    coap/coapcontenthandlers.h
+    coap/message.hpp \
+    coap/exchange_p.hpp \
+    coap/exchange.hpp \
+    coap/stack_p.hpp \
+    coap/stack.hpp \
+    coap/contenthandlers.h \
+    coap/endpointbase.hpp \
+    settings.h \
+    coap/udpendpoint.h
 
 SOURCES += \
     coap/coap.cpp \
-    coap/coapendpoint.cpp \
-    coap/coapexchange.cpp \
-    coap/coapmessage.cpp \
     coap/timerqueue.cpp \
-    coap/coapcontenthandlers.cpp
+    coap/stack.cpp \
+    coap/message.cpp \
+    coap/exchange.cpp \
+    coap/contenthandlers.cpp \
+    settings.cpp \
+    coap/udpendpoint.cpp

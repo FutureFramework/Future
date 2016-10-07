@@ -2,7 +2,7 @@
 #define COAPEXCHANGE_H
 
 #include "../iotlib_global.h"
-#include "coapmessage.hpp"
+#include "message.hpp"
 
 class CoapEndpoint;
 class CoapEndpointPrivate;

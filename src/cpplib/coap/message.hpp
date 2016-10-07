@@ -1,5 +1,5 @@
-#ifndef COAP_PDU_H
-#define COAP_PDU_H
+#ifndef COAP_MESSAGE_H
+#define COAP_MESSAGE_H
 
 #include "../iotlib_global.h"
 #include "coap.hpp"
@@ -10,17 +10,21 @@
 #include <QHostAddress>
 #include <QUrl>
 
-class CoapMessagePrivate;
-class CoapOption;
-class IOTLIB_SHARED_EXPORT CoapMessage
+namespace iotlib {
+namespace coap {
+
+class MessagePrivate;
+class Option;
+class Address;
+class IOTLIB_SHARED_EXPORT Message
 {
     Q_GADGET
 public:
-    CoapMessage();
-    CoapMessage(const QByteArray &array);
-    CoapMessage(const CoapMessage &other);
-    CoapMessage &operator=(const CoapMessage &other);
-    ~CoapMessage();
+    Message();
+    Message(const QByteArray &array);
+    Message(const Message &other);
+    Message &operator=(const Message &other);
+    ~Message();
 
     enum class Type : quint8 {
     Confirmable     = 0x00,
@@ -114,9 +118,9 @@ public:
     quint16 messageId() const;
 
     void addOption(OptionType optionType, const QByteArray &data = QByteArray());
-    QList<CoapOption> options() const;
+    QList<Option> options() const;
     int optionsCount() const;
-    CoapOption option(int idx) const;
+    Option option(int idx) const;
 
     void setUrl(const QUrl &url);
     QUrl url() const;
@@ -130,49 +134,61 @@ public:
     QByteArray pack() const;
     void unpack(const QByteArray &packed);
 
-    QHostAddress address() const;
-    void setAddress(const QHostAddress &address);
+    Address address() const;
+    void setAddress(const Address &address);
 
-    quint16 port() const;
-    void setPort(quint16 port);
 
-    enum class Error {
-        FORMAT_ERROR           = 1,
-        UNKNOWN_VERSION        = 2,
-        WRONG_TOKEN_LENGTH     = 4,
-        WRONG_PAYLOAD_MARKER   = 8,
-        WRONG_OPTION_HEADER    = 16,
-        NOT_ENOUGH_DATA        = 32,
-        WRONG_VERSION          = 64,
-        WRONG_TOKEN            = 128,
-    };
-    Q_DECLARE_FLAGS(Errors, Error)
-    Errors errors() const;
+
     QString errorString() const;
     bool isValid() const;
     bool isNull() const;
 
 
 private:
-    QSharedDataPointer<CoapMessagePrivate> d;
+    QSharedDataPointer<MessagePrivate> d;
 };
-Q_DECLARE_OPERATORS_FOR_FLAGS(CoapMessage::Errors)
 
-class IOTLIB_SHARED_EXPORT CoapOption {
+class Address
+{
 public:
-    CoapOption();
-    CoapOption(CoapMessage::OptionType optionType, const QByteArray &data);
+    Address();
+    Address(const QString &address);
+    Address(const QHostAddress &hostAddress, quint16 port);
 
-    CoapMessage::OptionType type() const;
+    void setHostAddress(const QHostAddress &hostAddress);
+    QHostAddress hostAddress() const;
+
+    quint16 port() const;
+    void setPort(quint16 port);
+
+    void setAddress(const QString &address);
+    QString address() const;
+
+private:
+    QHostAddress m_hostAddress;
+    quint16 m_port;
+    QString m_address;
+};
+
+class Option
+{
+public:
+    Option();
+    Option(Message::OptionType optionType, const QByteArray &data);
+
+    Message::OptionType type() const;
     QByteArray data() const;
     bool isValid() const;
 
-    bool operator ==(const CoapOption &other);
+    bool operator ==(const Option &other);
 private:
-    CoapMessage::OptionType m_type;
+    Message::OptionType m_type;
     QByteArray m_data;
 };
 
-QDebug operator<<(QDebug debug, const CoapMessage &message);
+} // coap
+} // iotlib
 
-#endif // COAP_PDU_H
+QDebug operator<<(QDebug debug, const iotlib::coap::Message &message);
+
+#endif // COAP_MESSAGE_H

@@ -1,6 +1,6 @@
-#include "coapexchange.hpp"
-#include "coapexchange_p.hpp"
-#include "coapendpoint_p.hpp"
+#include "exchange.hpp"
+#include "exchange_p.hpp"
+#include "stack_p.hpp"
 #include "coap.hpp"
 
 #include <QJSValue>

@@ -1,50 +1,52 @@
-#include "coapmessage.hpp"
+#include "message.hpp"
 #include "endianhelper.h"
 
 #include <QAtomicInt>
 #include <QDebug>
 #include <QMetaEnum>
 
-CoapOption::CoapOption()
-    : m_type((CoapMessage::OptionType)0)
+using namespace iotlib::coap;
+
+Option::Option()
+    : m_type((Message::OptionType)0)
 { }
 
-CoapOption::CoapOption(CoapMessage::OptionType optionType, const QByteArray &data) :
+Option::Option(Message::OptionType optionType, const QByteArray &data) :
     m_type(optionType), m_data(data)
 { }
 
-CoapMessage::OptionType CoapOption::type() const
+Message::OptionType Option::type() const
 {
     return m_type;
 }
 
-QByteArray CoapOption::data() const
+QByteArray Option::data() const
 {
     return m_data;
 }
 
-bool CoapOption::isValid() const
+bool Option::isValid() const
 {
     return (quint16)m_type != 0;
 }
 
-bool CoapOption::operator ==(const CoapOption &other)
+bool Option::operator ==(const Option &other)
 {
     return (m_type == other.m_type) && (m_data == other.m_data);
 }
 
-class CoapMessagePrivate : public QSharedData
+class MessagePrivate : public QSharedData
 {
 public:
-    CoapMessagePrivate() :
+    MessagePrivate() :
         version(1),
-        type(CoapMessage::Type::Reset),
-        code(CoapMessage::Code::Empty),
+        type(Message::Type::Reset),
+        code(Message::Code::Empty),
         message_id(0)
     {
         // TODO   d->errors =
     }
-    CoapMessagePrivate(const CoapMessagePrivate &other) :
+    MessagePrivate(const MessagePrivate &other) :
         QSharedData(other),
         version(other.version),
         type(other.type),
@@ -57,33 +59,44 @@ public:
         port(other.port),
         errors(other.errors)
     { }
-    ~CoapMessagePrivate() { }
+    ~MessagePrivate() { }
 
     quint8 version;
-    CoapMessage::Type type;
-    CoapMessage::Code code;
+    Message::Type type;
+    Message::Code code;
     quint16 message_id;
     QByteArray token;
-    QList<CoapOption> options;
+    QList<Option> options;
     QByteArray payload;
     QHostAddress address;
     quint16 port;
-    CoapMessage::Errors errors;
+
+    enum Error {
+        FORMAT_ERROR           = 1,
+        UNKNOWN_VERSION        = 2,
+        WRONG_TOKEN_LENGTH     = 4,
+        WRONG_PAYLOAD_MARKER   = 8,
+        WRONG_OPTION_HEADER    = 16,
+        NOT_ENOUGH_DATA        = 32,
+        WRONG_VERSION          = 64,
+        WRONG_TOKEN            = 128,
+    };
+    Error error;
 };
 
-CoapMessage::CoapMessage()
-    : d(new CoapMessagePrivate)
+Message::Message()
+    : d(new MessagePrivate)
 {
 
 }
 
-CoapMessage::CoapMessage(const CoapMessage &other) :
+Message::Message(const Message &other) :
     d(other.d)
 {
 
 }
 
-CoapMessage &CoapMessage::operator=(const CoapMessage &other)
+Message &Message::operator=(const Message &other)
 {
     if (this == &other) // protect against self-assignment
         return *this;
@@ -91,23 +104,23 @@ CoapMessage &CoapMessage::operator=(const CoapMessage &other)
     return *this;
 }
 
-CoapMessage::~CoapMessage()
+Message::~Message()
 {
 }
 
-void CoapMessage::setVersion(quint8 version)
+void Message::setVersion(quint8 version)
 {
     d->version = version;
     if (version != 1)
         d->errors |= Error::WRONG_VERSION;
 }
 
-quint8 CoapMessage::version() const
+quint8 Message::version() const
 {
     return d->version;
 }
 
-void CoapMessage::setType(CoapMessage::Type type)
+void Message::setType(Message::Type type)
 {
 
     if (d->type == type)
@@ -115,39 +128,39 @@ void CoapMessage::setType(CoapMessage::Type type)
     d->type = type;
 }
 
-CoapMessage::Type CoapMessage::type() const
+Message::Type Message::type() const
 {
     return d->type;
 }
 
-void CoapMessage::setCode(CoapMessage::Code code)
+void Message::setCode(Message::Code code)
 {
     if (d->code == code)
         return;
     d->code = code;
 }
 
-CoapMessage::Code CoapMessage::code() const
+Message::Code Message::code() const
 {
     return d->code;
 }
 
-bool CoapMessage::isEmpty() const
+bool Message::isEmpty() const
 {
     return d->code == Code::Empty;
 }
 
-bool CoapMessage::isRequest() const
+bool Message::isRequest() const
 {
     return ((quint8)d->code >= 0x01 && (quint8)d->code <= 0x04);
 }
 
-bool CoapMessage::isResponse() const
+bool Message::isResponse() const
 {
     return (!isEmpty() && !isRequest());
 }
 
-void CoapMessage::setToken(const QByteArray &token)
+void Message::setToken(const QByteArray &token)
 {
     if (d->token == token)
         return;
@@ -156,7 +169,7 @@ void CoapMessage::setToken(const QByteArray &token)
         d->errors |= Error::WRONG_TOKEN;
 }
 
-void CoapMessage::setToken(const char *token, quint8 length)
+void Message::setToken(const char *token, quint8 length)
 {
     QByteArray t(token, length);
     if (d->token == t)
@@ -166,62 +179,62 @@ void CoapMessage::setToken(const char *token, quint8 length)
         d->errors |= Error::WRONG_TOKEN;
 }
 
-QByteArray CoapMessage::token() const
+QByteArray Message::token() const
 {
     return d->token;
 }
 
-void CoapMessage::setMessageId(quint16 id)
+void Message::setMessageId(quint16 id)
 {
     if (d->message_id == id)
         return;
     d->message_id = id;
 }
 
-quint16 CoapMessage::messageId() const
+quint16 Message::messageId() const
 {
     return d->message_id;
 }
 
-void CoapMessage::addOption(CoapMessage::OptionType optionType, const QByteArray &value)
+void Message::addOption(Message::OptionType optionType, const QByteArray &value)
 {
     int idx = 0;
     for (int i = 0; i < d->options.length(); ++i) {
         if (optionType > d->options[i].type())
             idx++;
     }
-    CoapOption option(optionType, value);
+    Option option(optionType, value);
     if (d->options.contains(option))
         return;
     d->options.insert(idx, option);
 }
 
-QList<CoapOption> CoapMessage::options() const
+QList<Option> Message::options() const
 {
     return d->options;
 }
 
-int CoapMessage::optionsCount() const
+int Message::optionsCount() const
 {
     return d->options.length();
 }
 
-CoapOption CoapMessage::option(int idx) const
+Option Message::option(int idx) const
 {
     if (idx < 0 || idx >= d->options.length())
-        return CoapOption();
+        return Option();
     return d->options[idx];
 }
 
-void CoapMessage::setUrl(const QUrl &url)
+void Message::setUrl(const QUrl &url)
 {
     foreach (const QString &path, url.path().split("/", QString::SkipEmptyParts))
         addOption(OptionType::UriPath, path.toUtf8());
 }
 
-void CoapMessage::setContentFormat(CoapMessage::ContentFormat format)
+void Message::setContentFormat(Message::ContentFormat format)
 {
-    CoapMessage::OptionType optionContentFormat = OptionType::ContentFormat;
+    Message::OptionType optionContentFormat = OptionType::ContentFormat;
     if (format == ContentFormat::TextPlain) {
         addOption(optionContentFormat, QByteArray());
     } else if ((quint16)format < 256) {
@@ -236,20 +249,20 @@ void CoapMessage::setContentFormat(CoapMessage::ContentFormat format)
     }
 }
 
-CoapMessage::ContentFormat CoapMessage::contentFormat() const
+Message::ContentFormat Message::contentFormat() const
 {
-    foreach (const CoapOption &option, d->options)
+    foreach (const Option &option, d->options)
         if (option.type() == OptionType::ContentFormat)
             return (ContentFormat)option.data().data()[0];
     return ContentFormat::TextPlain;
 }
 
-void CoapMessage::setContent(const QByteArray &content)
+void Message::setContent(const QByteArray &content)
 {
     d->payload = content;
 }
 
-QByteArray CoapMessage::content() const
+QByteArray Message::content() const
 {
     return d->payload;
 }
@@ -294,10 +307,10 @@ quint8 *pack_option(quint8 *p, quint16 optionNumber, const QByteArray &value, bo
     return p;
 }
 
-QByteArray CoapMessage::pack() const
+QByteArray Message::pack() const
 {
 
-//    const_cast<CoapMessagePrivate *>(d)->errors = Errors(0);
+//    const_cast<MessagePrivate *>(d)->errors = Errors(0);
     quint32 pduSize = 4; // header
     pduSize += d->token.length();
     quint8 *p = 0;
@@ -336,7 +349,7 @@ QByteArray CoapMessage::pack() const
     return packed;
 }
 
-void CoapMessage::unpack(const QByteArray &packed)
+void Message::unpack(const QByteArray &packed)
 {
     d->errors = Errors(0);
     d->options.clear();
@@ -352,9 +365,9 @@ void CoapMessage::unpack(const QByteArray &packed)
     if (d->version != 1)
         d->errors |= Error::UNKNOWN_VERSION;
 
-    d->type = (CoapMessage::Type)( (p[0] & 0x30) >> 4 );
+    d->type = (Message::Type)( (p[0] & 0x30) >> 4 );
     quint8 tokenLength = (p[0] & 0xf);
-    d->code = (CoapMessage::Code)p[1];
+    d->code = (Message::Code)p[1];
     if (tokenLength > 8)
         d->errors |= Error::WRONG_TOKEN_LENGTH;
     else
@@ -403,7 +416,7 @@ void CoapMessage::unpack(const QByteArray &packed)
         }
 
         optionNumber += optionDelta;
-        CoapOption option((CoapMessage::OptionType)optionNumber, QByteArray((const char *)p, optionLength));
+        Option option((Message::OptionType)optionNumber, QByteArray((const char *)p, optionLength));
         d->options.append(option);
         p += optionLength;
     } while (p <= pend);
@@ -412,50 +425,50 @@ void CoapMessage::unpack(const QByteArray &packed)
         d->errors |= Error::NOT_ENOUGH_DATA;
 }
 
-QHostAddress CoapMessage::address() const
+QHostAddress Message::address() const
 {
     return d->address;
 }
 
-void CoapMessage::setAddress(const QHostAddress &address)
+void Message::setAddress(const QHostAddress &address)
 {
     d->address = address;
 }
 
-quint16 CoapMessage::port() const
+quint16 Message::port() const
 {
     return d->port;
 }
 
-void CoapMessage::setPort(quint16 port)
+void Message::setPort(quint16 port)
 {
     d->port = port;
 }
 
-CoapMessage::Errors CoapMessage::errors() const
+Message::Errors Message::errors() const
 {
     return d->errors;
 }
 
-bool CoapMessage::isValid() const
+bool Message::isValid() const
 {
     return d->errors == Errors(0);
 }
 
 
-QDebug operator<<(QDebug debug, const CoapMessage &pdu)
+QDebug operator<<(QDebug debug, const Message &pdu)
 {
     QDebugStateSaver saver(debug);
     debug.nospace();
     if (!pdu.isValid()) {
-        debug << "CoapMessage(Invalid)";
+        debug << "Message(Invalid)";
         return debug;
     }
     int typeEnum = pdu.staticMetaObject.indexOfEnumerator("Type");
     int codeEnum = pdu.staticMetaObject.indexOfEnumerator("Code");
     int optionTypeEnum = pdu.staticMetaObject.indexOfEnumerator("OptionType");
     int contentFormatEnum = pdu.staticMetaObject.indexOfEnumerator("ContentFormat");
-    debug << "CoapMessage(" << pdu.staticMetaObject.enumerator(typeEnum).key((int)pdu.type());
+    debug << "Message(" << pdu.staticMetaObject.enumerator(typeEnum).key((int)pdu.type());
     debug << pdu.staticMetaObject.enumerator(codeEnum).key((int)pdu.code()) << " ";
     debug << pdu.staticMetaObject.enumerator(1).key(123) << " ";
     debug << "Token:" << pdu.token().toHex() << " MID:" << pdu.messageId() << " ";
@@ -464,7 +477,7 @@ QDebug operator<<(QDebug debug, const CoapMessage &pdu)
 //        QDebug dbg(QtDebugMsg);
 //        dbg.nospace();
 //        dbg << "Option:" << i << ", ";
-//        CoapOption option = pdu.option(i);
+//        Option option = pdu.option(i);
 //        dbg << "isValid:" << option.isValid() << ", ";
 //        if (!option.isValid())
 //            continue;

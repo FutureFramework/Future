@@ -2,7 +2,7 @@
 #define COAPENDPOINT_H
 
 #include "../iotlib_global.h"
-#include "coapmessage.hpp"
+#include "message.hpp"
 
 #include <QObject>
 #include <QHostAddress>

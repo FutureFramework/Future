@@ -1,7 +1,7 @@
 #ifndef COAP_EXCHANGE_P_H
 #define COAP_EXCHANGE_P_H
 
-#include "coapexchange.hpp"
+#include "exchange.hpp"
 
 #include <functional>
 #include <QJSValue>

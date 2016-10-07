@@ -1,4 +1,4 @@
-#include "coapcontenthandlers.h"
+#include "contenthandlers.h"
 #include <QJsonDocument>
 #include "qmsgpack/msgpack.h"
 

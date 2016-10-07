@@ -1,7 +1,7 @@
 #ifndef COAPENDPOINT_P_H
 #define COAPENDPOINT_P_H
 
-#include "coapendpoint.hpp"
+#include "stack.hpp"
 
 #include <QObject>
 #include <QUdpSocket>

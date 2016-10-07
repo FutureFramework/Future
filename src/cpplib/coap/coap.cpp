@@ -1,6 +1,6 @@
 #include "coap.hpp"
-#include "coapcontenthandlers.h"
-#include "coapmessage.hpp"
+#include "contenthandlers.h"
+#include "message.hpp"
 
 #include <QList>
 #include <QDebug>
